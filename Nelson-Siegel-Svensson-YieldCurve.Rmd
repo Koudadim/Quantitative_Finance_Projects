@@ -1,0 +1,92 @@
+---
+title: "Yield-Curves"
+author: "Koudadim Olivier TRAORE"
+date: "2025-02-21"
+output: ioslides_presentation
+---
+
+## The Nelson-Siegel method functional
+
+The Nelson-Siegel method consist of modeling the zero-coupon yield curve using the following parsimonious functional:
+
+$$
+R(0, \tau) = \beta_0 + \beta_1 \left( \dfrac{1- \exp(-\tau / \lambda)}{\tau / \lambda}  \right) + \beta_2 \left( \dfrac{1- \exp(-\tau / \alpha)}{\tau / \lambda} -\exp(-\tau / \lambda) \right) 
+$$ where:
+
+-   $R(0, \tau)$ denotes the ZC rate at maturity $T$
+-   $\lambda$ is the scale parameter
+-   $\beta_0$ is the level factor, i.e long-term rate
+-   $\beta_1$ is the rotation factor, i.e the distance between the short-term rate and the long-term one
+-   $\beta_2$ is the slope factor, measuring the yield curve curvature.
+
+## Nelson-Siegel method's parameters estimation
+
+```{r Labrary}
+#install.packages("YieldCurve")
+library(YieldCurve)
+```
+
+```{r}
+data("FedYieldCurve") # Data that will be used
+View(FedYieldCurve)
+```
+
+```{r}
+maturity.Fed <- c(3/12, 0.5, 1, 2, 3, 5, 7, 10)
+NSParameters <- Nelson.Siegel( rate=first(FedYieldCurve,'10 month'),	maturity = maturity.Fed)
+```
+
+```{r}
+NSParameters
+
+y <- NSrates(NSParameters[5,], maturity.Fed)
+```
+
+## Plot of Nielson-Siegel Yield Curve
+
+```{r pressure}
+plot(maturity.Fed, FedYieldCurve[5,], main="Fitting Nelson-Siegel yield curve", xlab=c("Pillars in months"), type="o")
+lines(maturity.Fed, y, col=2)
+legend("topleft",legend=c("observed yield curve","fitted yield curve"),
+col=c(1,2),lty=1)
+grid()
+```
+
+## Nelson-Siegel augmented also called Nelson-Siegel-Svenson
+
+The Nelson-Siegel model cannot reconstruct all the yield curves encountered on the market. In particular, the one-hump, one-trough shapes cannot be reproduced. The augmented Nelson-Siegel model remedies this. The functional of the Nelson-Siegel augmented model is given by par :
+
+$$
+\begin{aligned}
+R(0, \tau) = & \beta_0 + \beta_1 \left( \dfrac{1- \exp(-\tau / \lambda_1)}{\tau / \lambda_1}  \right) + \beta_2 \left( \dfrac{1- \exp(-\tau / \lambda_1)}{\tau / \lambda_1} -\exp(-\tau / \lambda_1) \right) \\
+& + \beta_3 \left( \dfrac{1- \exp(-\tau / \lambda_2)}{\tau / \lambda_2} -\exp(-\tau / \lambda_2) \right)
+\end{aligned}
+$$ where:
+
+-   $R(0, \tau)$ denotes the ZC rate at maturity $T$
+-   $\lambda_1$ is the scale parameter
+-   $\lambda_2$ is the shape parameter
+-   $\beta_0$ is the level factor, i.e long-term rate
+-   $\beta_1$ is the rotation factor, i.e the distance between the short-term rate and the long-term one
+-   $\beta_2$ is the slope factor (medium-term rate), measuring the yield curve curvature.
+-   $\beta_3$ is another slope factor, measuring the yield curve additional curvature.
+
+## Estimation of Nelson-Siegel-Svensson parameters
+
+```{r}
+data(ECBYieldCurve)
+maturity.ECB <- c(0.25,0.5,seq(1,30,by=1))
+A <- Svensson(ECBYieldCurve[1:10,], maturity.ECB )
+Svensson.rate <- Srates( A, maturity.ECB, "Spot" )
+
+A
+```
+
+```{r}
+plot(maturity.ECB, Svensson.rate[5,],main="Fitting Svensson yield curve",
+ xlab=c("Pillars in years"), type="l", col=3)
+lines( maturity.ECB, ECBYieldCurve[5,],col=2)
+legend("topleft",legend=c("fitted yield curve","observed yield curve"),
+col=c(3,2),lty=1)
+grid()
+```
